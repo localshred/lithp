@@ -2,19 +2,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define string char*
+#ifdef _WIN32
+#include <string.h>
 
-// Static input buffer
-static char input[2048];
+static char buffer[2048];
+
+char* readline(char* prompt) {
+  fputs(prompt, stdout);
+  fgets(buffer, 2048, stdin);
+  char* cpy = malloc(strlen(buffer)+1);
+  strcpy(cpy, buffer);
+  cpy[strlen(cpy)-1] = '\0';
+}
+
+void add_history(char* unused) {}
+
+#else
+#include <editline/readline.h>
+#endif
+
+#define string char*
 
 int main(int argc, string* argv) {
   puts("lithp version 0.0.0.0.1");
   puts("Press Ctrl+C to exit\n");
 
   while (1) {
-    fputs("lithp> ", stdout);
-    fgets(input, 2048, stdin);
-    printf("No, you're a %s", input);
+    char* input = readline("lithp> ");
+    add_history(input);
+    printf("No, you're a %s\n", input);
+    free(input);
   }
 
   return EXIT_SUCCESS;

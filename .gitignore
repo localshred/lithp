@@ -1,3 +1,4 @@
 main
 hello_world
 *.o
+.DS_Store
