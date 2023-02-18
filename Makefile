@@ -1,8 +1,6 @@
 clean:
-	rm -f main
+	rm -f hello_world.o prompt.o
 
-main:
-	cc -std=c99 -Wall hello_world.c -o main
+hello_world.o:
+	cc -std=c99 -Wall hello_world.c -o hello_world.o
 
-debug: main
-	lldb --arch arm64 main
