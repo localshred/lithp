@@ -63,7 +63,11 @@ long eval(mpc_ast_t *t) {
   return x;
 }
 
-int main(int _, char **_) {
+int main(int argc, char **argv) {
+  // Dismiss unused arg warnings
+  (void)argc;
+  (void)argv;
+
   mpc_parser_t *Number = mpc_new("number");
   mpc_parser_t *Operator = mpc_new("operator");
   mpc_parser_t *Expr = mpc_new("expr");
