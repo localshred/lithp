@@ -1,11 +1,11 @@
 clean:
-	rm -f hello_world.o parsing.o
+	rm -f hello_world parsing
 
-hello_world.o:
-	cc -std=c99 -Wall hello_world.c -o hello_world.o
+hello_world:
+	cc -std=c99 -Wall -Werror $@.c -o $@
 
-parsing.o:
-	cc -std=c99 -Wall mpc.c parsing.c -ledit -lm -o parsing.o
+parsing:
+	cc -std=c99 -Wall -Werror mpc.c $@.c -ledit -lm -o $@
 
-debug: parsing.o
-	lldb --arch arm64 parsing.o
+debug: parsing
+	lldb --arch arm64 parsing
