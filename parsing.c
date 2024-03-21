@@ -24,27 +24,30 @@ void add_history(char *unused) {}
 #include <editline/readline.h>
 #endif
 
-lval eval_op(lval x, char *op, lval y) {
-  if (x.type == LVAL_ERR) {
+// Deprecated
+lval *eval_op(lval *x, char *op, lval *y) {
+  if (x->type == LVAL_ERR) {
     return x;
   }
-  if (y.type == LVAL_ERR) {
+  if (y->type == LVAL_ERR) {
     return y;
   }
 
   if (strcmp(op, "+") == 0 || strcmp(op, "add") == 0) {
-    return lval_num(x.num + y.num);
+    return lval_num(x->num + y->num);
   }
   if (strcmp(op, "-") == 0 || strcmp(op, "sub") == 0) {
-    return lval_num(x.num - y.num);
+    return lval_num(x->num - y->num);
   }
   if (strcmp(op, "*") == 0 || strcmp(op, "mul") == 0) {
-    return lval_num(x.num * y.num);
+    return lval_num(x->num * y->num);
   }
   if (strcmp(op, "/") == 0 || strcmp(op, "div") == 0) {
-    return y.num == 0 ? lval_err(LERR_DIV_ZERO) : lval_num(x.num / y.num);
+    return y->num == 0 ? lval_err("cannot divide by zero")
+                       : lval_num(x->num / y->num);
   }
-  return lval_err(LERR_BAD_OP);
+
+  return lval_err("bad operator");
 }
 
 /*
@@ -56,17 +59,17 @@ lval eval_op(lval x, char *op, lval y) {
  *   struct mpc_ast_t** children;
  * } mpc_ast_t;
  */
-lval eval(mpc_ast_t *t) {
-  if (strstr(t->tag, "number")) {
+lval *eval(mpc_ast_t *t) {
+  if (strstr(t->tag, "")) {
     errno = 0;
     long x = strtol(t->contents, NULL, 10);
-    return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
+    return errno != ERANGE ? lval_num(x) : lval_err("invalid number");
   }
   // t->children[0] will always be '('
   // t->children[len] will always be ')'
   // Get the operator and the first arg of the expr
   char *op = t->children[1]->contents;
-  lval x = eval(t->children[2]);
+  lval *x = eval(t->children[2]);
 
   // Now get remaining args of the expr and recursively evaluate the operation
   // with those values
@@ -87,17 +90,19 @@ int main(int argc, char **argv) {
   (void)argv;
 
   mpc_parser_t *Number = mpc_new("number");
-  mpc_parser_t *Operator = mpc_new("operator");
+  mpc_parser_t *Symbol = mpc_new("symbol");
+  mpc_parser_t *Sexpr = mpc_new("sexpr");
   mpc_parser_t *Expr = mpc_new("expr");
   mpc_parser_t *Lithp = mpc_new("lithp");
 
-  mpca_lang(MPCA_LANG_DEFAULT, "                        \
-    number   : /-?[0-9]+(\\.[0-9]+)?/ ;                 \
-    operator : /(-|+|*|\\/|%|add|sub|mul|div)/ ;        \
-    expr     : <number> | '(' <operator> <expr>+ ')'  ; \
-    lithp    : /^/ <operator> <expr>+ /$/ ;             \
-",
-            Number, Operator, Expr, Lithp);
+  mpca_lang(MPCA_LANG_DEFAULT, "                 \
+    number   : /-?[0-9]+(\\.[0-9]+)?/          ; \
+    symbol   : /(-|+|*|\\/|%|add|sub|mul|div)/ ; \
+    sexpr    : '(' <expr>* ')'                 ; \
+    expr     : <number> | <symbol> | <sexpr>   ; \
+    lithp    : /^/ <expr>* /$/                 ; \
+   ",
+            Number, Symbol, Sexpr, Expr, Lithp);
 
   puts("lithp version 0.0.0.0.1");
   puts("Press Ctrl+C to exit\n");
@@ -109,8 +114,9 @@ int main(int argc, char **argv) {
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Lithp, &r)) {
       mpc_ast_print(r.output);
-      lval result = eval(r.output);
+      lval *result = lval_read(r.output);
       lval_println(result);
+      lval_free(result);
       mpc_ast_delete(r.output);
     } else {
       mpc_err_print(r.error);
@@ -120,6 +126,6 @@ int main(int argc, char **argv) {
     free(input);
   }
 
-  mpc_cleanup(4, Number, Operator, Expr, Lithp);
+  mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Lithp);
   return EXIT_SUCCESS;
 }
