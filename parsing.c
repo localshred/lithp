@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Lithp, &r)) {
       mpc_ast_print(r.output);
-      lval *result = lval_read(r.output);
+      lval *result = lval_eval(lval_read(r.output));
       lval_println(result);
       lval_free(result);
       mpc_ast_delete(r.output);

@@ -39,8 +39,9 @@ lval *lval_sym(char *s);
 void lval_free(lval *v);
 
 /**
- * Reading lvals
+ * Reading & Evaluating lvals
  **/
+lval *lval_eval(lval *v);
 lval *lval_read(mpc_ast_t *t);
 
 /**
